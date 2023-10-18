@@ -43,10 +43,10 @@ optional arguments:
 #### MS Annika Result columns mapping ####
 # Checked: (bool) TRUE | FALSE                             -> create with FALSE
 # Crosslinker:  (string) e.g. DSSO                         -> create with crosslinker name
-# Crosslink Type: (string selection) Intra | Inter         -> mapped "Link-Type"                    f
+# Crosslink Type: (string selection) Intra | Inter         -> mapped "Link-Type"
 # # CSMs: (int)                                            -> mapped "CSM count"
 # # Proteins: (int)                                        -> create with zeros
-# Sequence A: (string) e.g. [K]SSAAR                       -> mapped "Alpha peptide"                f
+# Sequence A: (string) e.g. [K]SSAAR                       -> mapped "Alpha peptide"
 # Accession A: (string) e.g. P0A7X3                        -> mapped "Alpha protein mapping(s)"
 # Position A: int                                          -> mapped "Alpha peptide position"
 # Sequence B: (string)                                     -> ^
@@ -58,12 +58,15 @@ optional arguments:
 # In protein A: (int)                                      -> create with zeros
 # In protein B: (int)                                      -> create with zeros
 # Decoy: (bool) TRUE | FALSE                               -> create with FALSE
-# Modifications A: (string) e.g. K1(DSSO);M1(Oxidation)    -> create with xl name and modification  f
-# Modifications B: (string)                                -> create with xl name and modification  f
+# Modifications A: (string) e.g. K1(DSSO);M1(Oxidation)    -> create with xl name and modification
+# Modifications B: (string)                                -> create with xl name and modification
 # Confidence: (string selection) High | Medium | Low       -> create with High
 
 # function that returns pandas dataframe in annika format
 def create_annika_result(scout_filename: str, crosslinker: str = "DSSO", crosslinker_aa: str = "K") -> pd.DataFrame:
+
+    if len(crosslinker_aa) != 1:
+        raise Exception("Crosslinker modifications that affect more than one amino acid are not supported! Exiting...")
 
     # load file
     scout_df = pd.read_csv(scout_filename)
@@ -72,32 +75,29 @@ def create_annika_result(scout_filename: str, crosslinker: str = "DSSO", crossli
     # columns
     Checked = ["FALSE" for i in range(nrows)]
     Crosslinker = [crosslinker for i in range(nrows)]
-    Crosslink_Type = []
-    CSMs = []
+    Crosslink_Type = scout_df["Link-Type"].apply(lambda x: "Intra" if "intra" in x.lower() else "Inter").tolist()
+    CSMs = scout_df["CSM count"].tolist()
     Proteins = [0 for i in range(nrows)]
-    Sequence_A = []
-    Accession_A = []
-    Position_A = []
-    Sequence_B = []
-    Accession_B = []
-    Position_B = []
-    Protein_Descriptions_A = []
-    Protein_Descriptions_B = []
-    Best_CSM_Score = []
+    Sequence_A = scout_df["Alpha peptide"].apply(lambda x: x.replace(" ", "")).tolist()
+    Accession_A = scout_df["Alpha protein mapping(s)"].tolist()
+    Position_A = scout_df["Alpha peptide position"].tolist()
+    Sequence_B = scout_df["Beta peptide"].apply(lambda x: x.replace(" ", "")).tolist()
+    Accession_B = scout_df["Beta protein mapping(s)"].tolist()
+    Position_B = scout_df["Beta peptide position"].tolist()
+    Protein_Descriptions_A = scout_df["Alpha protein mapping(s)"].tolist()
+    Protein_Descriptions_B = scout_df["Beta protein mapping(s)"].tolist()
+    Best_CSM_Score = scout_df["Score"].tolist()
     In_protein_A = [0 for i in range(nrows)]
     In_protein_B = [0 for i in range(nrows)]
     Decoy = ["FALSE" for i in range(nrows)]
-    Modifications_A = []
-    Modifications_B = []
+    Modifications_A = scout_df["Alpha peptide position"].apply(lambda x: crosslinker_aa + str(x) + "(" + crosslinker + ")").tolist()
+    Modifications_B = scout_df["Beta peptide position"].apply(lambda x: crosslinker_aa + str(x) + "(" + crosslinker + ")").tolist()
     Confidence = ["High" for i in range(nrows)]
-
-    # fill columns
-    ## todo
 
     # create annika dataframe
     annika_df = pd.DataFrame({"Checked": Checked,
                               "Crosslinker": Crosslinker,
-                              "Crosslink Type": Crosslinker_Type,
+                              "Crosslink Type": Crosslink_Type,
                               "# CSMs": CSMs,
                               "# Proteins": Proteins,
                               "Sequence A": Sequence_A,
@@ -148,7 +148,7 @@ def main() -> pd.DataFrame:
     args = parser.parse_args()
 
     input_file = args.files[0]
-    output_file = args.files[0].split(".tsv")[0] + ".xlsx"
+    output_file = args.files[0].split(".csv")[0] + ".xlsx"
 
     if len(args.files) > 1:
         output_file = args.files[1].split(".xlsx")[0] + ".xlsx"
@@ -156,7 +156,7 @@ def main() -> pd.DataFrame:
     if args.output is not None:
         output_file = args.output.split(".xlsx")[0] + ".xlsx"
 
-    scout_resultdf = create_annika_result(input_file, args.crosslinker, args.crosslinker_modification, modifications)
+    scout_resultdf = create_annika_result(input_file, args.crosslinker, args.crosslinker_modification)
     scout_resultdf.to_excel(output_file, sheet_name = "Crosslinks", index = False, engine = "xlsxwriter")
 
     return scout_resultdf
