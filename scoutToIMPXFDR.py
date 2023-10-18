@@ -30,14 +30,14 @@ positional arguments:
                         is given it will be used as the output name!
 
 optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help            show this help message and exit.
   -o OUTPUT, --output OUTPUT
                         Name of the output file.
   -xl CROSSLINKER, --crosslinker CROSSLINKER
                         Name of the Crosslinker e.g. DSSO.
   -xlmod CROSSLINKER_MODIFICATION, --crosslinker-modification CROSSLINKER_MODIFICATION
                         Residue that the Crosslinker binds to e.g. K for DSSO.
-  --version             show program's version number and exit
+  --version             show program's version number and exit.
 """
 
 #### MS Annika Result columns mapping ####
