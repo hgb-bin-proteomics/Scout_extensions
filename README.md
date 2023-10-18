@@ -1,6 +1,6 @@
 # Scout Extensions
 
-Extensions to use [Scout](https://github.com/diogobor/Scout) with other software.
+Extensions to use the cross-linking tool [Scout](https://github.com/diogobor/Scout) with other software.
 
 ## Requirements
 
